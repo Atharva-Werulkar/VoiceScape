@@ -42,6 +42,7 @@ dependencies:
   permission_handler: ^11.2.1
   just_audio: ^0.9.36
   tflite_flutter: ^0.10.4
+  http: ^1.2.0
 
 
 dev_dependencies:

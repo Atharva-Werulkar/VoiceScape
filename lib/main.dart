@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'package:ai_voice_detector/model_converter.dart';
+import 'package:ai_voice_detector/preprocessing.dart';
+import 'package:ai_voice_detector/server_client.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,6 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -40,6 +42,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   String _detectedText = ' Result will be shown here...';
   late AnimationController _controller;
   File? _audioFile;
+  bool _loading = false;
 
   @override
   void initState() {
@@ -65,22 +68,43 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           _audioFile = File(result.files.single.path!);
         });
         print('Picked audio file: ${_audioFile}');
-        //store the audio file in the for processing
+
+        //name of audio file
+        print(
+            'Picked audio file nsme: ${_audioFile!.path.split('/').last.split('.').first.replaceAll('_', ' ')}');
+
+        // store the audio file in the for processing
+
         List<String> audioFiles = [_audioFile!.path];
-        List<List<double>> features =
-            ModelConverter.extractFeatures(audioFiles);
+        List<List<double>> features = PreProcessing.extractFeatures(audioFiles);
 
         print(features);
+
+        //final prediction = await ServerClient.sendRequest(features);
+        try {
+          // Send request to server
+          final response = await ServerClient.sendRequest(features);
+
+          if (response.isNotEmpty) {
+            //get the prediction from the server
+            final prediction = await ServerClient.getPrediction(features);
+
+            // Update UI with prediction
+            setState(() {
+              //clean the data and display the result
+              //IF 0 it is original audio
+              //IF 1 it is a fake audio
+              _detectedText =
+                  prediction.replaceAll('[', '').replaceAll(']', '');
+            });
+          }
+        } catch (e) {
+          print('Error getting prediction from server: $e');
+        }
       }
     } catch (e) {
       print('Error picking audio file: $e');
     }
-  }
-
-  Future<void> _pickAudioFile(File? audioFile) async {
-    // Your processing logic here
-    print('Processing audio file: ${audioFile?.path}');
-    _processAudioFile();
   }
 
   @override
@@ -110,7 +134,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                _detectedText,
+                //if the result is 0 it is original audio
+                //if the result is 1 it is a fake audio
+                _detectedText == '0'
+                    ? 'Audio is Original'
+                    : _detectedText == '1'
+                        ? 'Audio is Fake'
+                        : _detectedText,
                 style: const TextStyle(
                   fontSize: 20,
                   color: Colors.white,
@@ -138,7 +168,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF0E022A),
           ),
-          onPressed: () => _pickAudioFile(_audioFile),
+          onPressed: () => _processAudioFile(),
           child: const Text(
             'Pick an audio file',
             style: TextStyle(
