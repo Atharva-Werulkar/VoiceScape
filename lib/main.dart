@@ -42,7 +42,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   String _detectedText = ' Result will be shown here...';
   late AnimationController _controller;
   File? _audioFile;
-  bool _loading = false;
+  // bool _loading = false;
 
   @override
   void initState() {
@@ -78,8 +78,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         List<String> audioFiles = [_audioFile!.path];
         List<List<double>> features = PreProcessing.extractFeatures(audioFiles);
 
-        print(features);
-
         //final prediction = await ServerClient.sendRequest(features);
         try {
           // Send request to server
@@ -96,6 +94,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               //IF 1 it is a fake audio
               _detectedText =
                   prediction.replaceAll('[', '').replaceAll(']', '');
+            });
+            // Clear the features variable
+            setState(() {
+              features = [];
             });
           }
         } catch (e) {
