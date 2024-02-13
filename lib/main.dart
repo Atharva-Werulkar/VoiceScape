@@ -1,10 +1,16 @@
 import 'dart:io';
-import 'package:ai_voice_detector/preprocessing.dart';
 import 'package:ai_voice_detector/server_client.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
+
+enum ConnectionState {
+  Idle,
+  Loading,
+  Success,
+  Error,
+}
 
 void main() {
   runApp(const MyApp());
@@ -38,11 +44,10 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
-  // bool _isListening = false;
-  String _detectedText = ' Result will be shown here...';
+  String _detectedText = 'Result will be shown here...';
   late AnimationController _controller;
   File? _audioFile;
-  // bool _loading = false;
+  ConnectionState _connectionState = ConnectionState.Idle;
 
   @override
   void initState() {
@@ -57,7 +62,16 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   Future<void> _processAudioFile() async {
+    setState(() {
+      _connectionState = ConnectionState.Loading;
+    });
+
     try {
+      setState(() {
+        // Reset connection state
+        _connectionState = ConnectionState.Idle;
+      });
+
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.audio,
         allowMultiple: false,
@@ -67,45 +81,36 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         setState(() {
           _audioFile = File(result.files.single.path!);
         });
-        print('Picked audio file: ${_audioFile}');
+        print('Picked audio file: $_audioFile');
 
-        //name of audio file
-        print(
-            'Picked audio file nsme: ${_audioFile!.path.split('/').last.split('.').first.replaceAll('_', ' ')}');
+        //List<String> audioFiles = [_audioFile!.path];
+        // List<List<double>> features = PreProcessing.extractFeatures(audioFiles);
 
-        // store the audio file in the for processing
-
-        List<String> audioFiles = [_audioFile!.path];
-        List<List<double>> features = PreProcessing.extractFeatures(audioFiles);
-
-        //final prediction = await ServerClient.sendRequest(features);
         try {
-          // Send request to server
-          final response = await ServerClient.sendRequest(features);
+          final response = await ServerClient.sendRequest(_audioFile!);
+          print('Response from server: $response');
 
           if (response.isNotEmpty) {
-            //get the prediction from the server
-            final prediction = await ServerClient.getPrediction(features);
-
-            // Update UI with prediction
+            final prediction = await ServerClient.getPrediction(_audioFile!);
+            print('Prediction from server: $prediction');
             setState(() {
-              //clean the data and display the result
-              //IF 0 it is original audio
-              //IF 1 it is a fake audio
               _detectedText =
                   prediction.replaceAll('[', '').replaceAll(']', '');
-            });
-            // Clear the features variable
-            setState(() {
-              features = [];
+              _connectionState = ConnectionState.Success;
             });
           }
         } catch (e) {
           print('Error getting prediction from server: $e');
+          setState(() {
+            _connectionState = ConnectionState.Error;
+          });
         }
       }
     } catch (e) {
       print('Error picking audio file: $e');
+      setState(() {
+        _connectionState = ConnectionState.Error;
+      });
     }
   }
 
@@ -135,21 +140,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                //if the result is 0 it is original audio
-                //if the result is 1 it is a fake audio
-                _detectedText == '0'
-                    ? 'Audio is Original'
-                    : _detectedText == '1'
-                        ? 'Audio is Fake'
-                        : _detectedText,
-                style: const TextStyle(
+              const Text(
+                'Detect if an audio is fake or original',
+                style: TextStyle(
                   fontSize: 20,
                   color: Colors.white,
                 ),
-              ),
-              const SizedBox(
-                height: 20,
               ),
               Lottie.asset(
                 'assets/loader.json',
@@ -160,6 +156,25 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     ..repeat();
                 },
               ),
+              const SizedBox(
+                  height: 20), // Add spacing between loader and message
+              if (_connectionState == ConnectionState.Loading)
+                const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              if (_connectionState == ConnectionState.Success ||
+                  _connectionState == ConnectionState.Error)
+                Text(
+                  _detectedText == '0'
+                      ? 'Audio is Original'
+                      : _detectedText == '1'
+                          ? 'Audio is Fake'
+                          : _detectedText,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.white,
+                  ),
+                ),
             ],
           ),
         ),
@@ -170,7 +185,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF0E022A),
           ),
-          onPressed: () => _processAudioFile(),
+          onPressed: _connectionState == ConnectionState.Success ||
+                  _connectionState == ConnectionState.Idle
+              ? () => _processAudioFile()
+              : null,
           child: const Text(
             'Pick an audio file',
             style: TextStyle(
