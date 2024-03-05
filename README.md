@@ -30,3 +30,58 @@ VoiceScape, a deepfake detection tool, addresses this issue by:
 - Combats deepfake fraud: Provides proactive defense against scams & impersonation attempts.
 
 VoiceScape goes beyond problem-solving. It acts as a guardian of authenticity, fostering a more trustworthy & secure online environment.
+
+
+## User Interface
+<img width="3626" alt="Group 11" src="https://github.com/Atharva-Werulkar/VoiceScape/assets/110187613/baa32104-2757-424e-8ecf-bf861f82f427">
+
+
+
+## 💻Installation
+
+* Clone the Repository and Change the directory.
+
+```bash
+  flutter pub get
+  flutter run
+```
+    
+## 🧑🏻‍💻Run 
+
+Clone the repository and change directory.
+
+```bash
+  git clone https://github.com/Atharva-Werulkar/VoiceScape.git
+```
+
+Go to the project directory
+
+```bash
+  cd ai_voice_detector
+```
+
+Flutter pub get and run
+```bash
+  flutter pub get
+  flutter run
+```
+## 📄License
+
+Distributed under the MIT License. See [License](https://choosealicense.com/licenses/mit/) for more information.
+
+
+## 🖊️Authors
+
+
+- [Atharva Werulkar](https://github.com/Atharva-Werulkar) - (werulkaratharva@gmail.com)
+- [Sanket Varma](https://github.com/sanketv010) - (sanketverma425@gmail.com)
+
+
+## Contributing
+
+Contributions are always welcome! Your feedback will help us grow as a developer and build better and more reusable apps.
+
+Please adhere to this project's `code of conduct`.
+
+
+
