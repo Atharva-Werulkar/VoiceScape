@@ -74,7 +74,7 @@ Distributed under the MIT License. See [License](https://choosealicense.com/lice
 
 
 - [Atharva Werulkar](https://github.com/Atharva-Werulkar) - (werulkaratharva@gmail.com)
-- [Sanket Varma](https://github.com/sanketv010) - (sanketverma425@gmail.com)
+- [Sanket Verma](https://github.com/sanketv010) - (sanketverma425@gmail.com)
 
 
 ## Contributing
